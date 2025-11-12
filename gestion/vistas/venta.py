@@ -4,7 +4,7 @@ from rest_framework.response import Response
 from django.utils import timezone
 from django.db import transaction
 import logging
-from gestion.models import Venta, VentaDetalle, Cliente, Sucursal, Producto, ProductoVariante, Stock, Usuario
+from gestion.models import Venta, VentaDetalle, Cliente, Sucursal, Producto, ProductoVariante, Stock, Usuario, ApiToken
 from gestion.serializadores.venta import VentaSerializer
 from gestion.services.push_notifications import send_push_to_usuario
 
@@ -213,18 +213,52 @@ class OnlineCheckout(APIView):
         items = data.get("items") or []
         if not items:
             return Response({"detail": "items es requerido"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Intentar identificar al usuario autenticado (para clientes)
+        usuario_autenticado = None
+        auth_header = request.headers.get("Authorization", "")
+        if auth_header.startswith("Token "):
+            token = auth_header.split(" ", 1)[1].strip()
+            try:
+                tok = ApiToken.objects.select_related("usuario__rol").get(key=token)
+                usuario_autenticado = tok.usuario
+            except ApiToken.DoesNotExist:
+                usuario_autenticado = None
+
         cliente = None
         cliente_id = data.get("cliente")
-        cliente_email = data.get("cliente_email")
+        cliente_email_data = data.get("cliente_email")
+        cliente_nombre_data = data.get("cliente_nombre") or data.get("cliente_name")
         if cliente_id:
             try:
                 cliente = Cliente.objects.get(id=cliente_id)
             except Cliente.DoesNotExist:
                 return Response({"detail": "cliente no encontrado"}, status=status.HTTP_400_BAD_REQUEST)
-        elif cliente_email:
-            cliente, _ = Cliente.objects.get_or_create(email=cliente_email, defaults={"nombre": cliente_email})
-        else:
-            cliente, _ = Cliente.objects.get_or_create(email="online@cliente", defaults={"nombre": "Cliente Online"})
+
+        if cliente is None:
+            cliente_email = None
+            cliente_nombre = None
+
+            if (
+                usuario_autenticado
+                and usuario_autenticado.rol
+                and usuario_autenticado.rol.nombre
+                and usuario_autenticado.rol.nombre.lower() == "cliente"
+            ):
+                cliente_email = usuario_autenticado.email
+                cliente_nombre = usuario_autenticado.nombre
+            elif cliente_email_data:
+                cliente_email = cliente_email_data
+                cliente_nombre = cliente_nombre_data or cliente_email_data
+
+            if cliente_email:
+                cliente, _ = Cliente.objects.get_or_create(
+                    email=cliente_email, defaults={"nombre": cliente_nombre or cliente_email}
+                )
+            else:
+                cliente, _ = Cliente.objects.get_or_create(
+                    email="online@cliente", defaults={"nombre": "Cliente Online"}
+                )
         # Sucursal genérica 1
         try:
             sucursal = Sucursal.objects.get(id=data.get("sucursal") or 1)
