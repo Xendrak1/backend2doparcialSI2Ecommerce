@@ -34,6 +34,7 @@ from gestion.vistas.auth import (
     SetFcmTokenView,
 )
 from gestion.vistas.upload import UploadImageView
+from gestion.vistas.notificaciones import NotificacionGlobalView
 
 router = DefaultRouter()
 router.register(r'categorias', CategoriaViewSet)
@@ -71,6 +72,8 @@ urlpatterns = [
     path('auth/me/', MeView.as_view(), name='auth-me'),
     path('auth/set-fcm-token/', SetFcmTokenView.as_view(), name='auth-set-fcm-token'),
     path('auth/bootstrap/', BootstrapView.as_view(), name='auth-bootstrap'),
+    # Notificaciones push
+    path('notificaciones/enviar/', NotificacionGlobalView.as_view(), name='notificaciones-enviar'),
     # Uploads (solo dev)
     path('upload/image/', UploadImageView.as_view(), name='upload-image'),
     # Router (al final para evitar que tome rutas como ventas/<pk>=pos_checkout)
