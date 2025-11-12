@@ -90,6 +90,16 @@ class NotificacionGlobalView(APIView):
                 status=status.HTTP_200_OK,
             )
 
+        # Log de tokens antes de enviar
+        tokens_list = [u.fcm_token for u in usuarios if u.fcm_token]
+        logger.info(
+            "Enviando notificación. Usuario: %s, Total destinatarios: %s, Tokens encontrados: %s, Roles: %s",
+            usuario.email,
+            total_destinatarios,
+            len(tokens_list),
+            roles_filtrados or ["todos"],
+        )
+        
         enviados, fallidos = send_push_to_usuarios(usuarios, titulo, mensaje, extra_data)
         logger.info(
             "Notificación enviada por %s (%s). Éxitos=%s, Fallos=%s, Total=%s, Roles=%s",
@@ -100,6 +110,12 @@ class NotificacionGlobalView(APIView):
             total_destinatarios,
             roles_filtrados or ["todos"],
         )
+        
+        # Log detallado si hay fallos
+        if fallidos > 0:
+            logger.warning(
+                "Algunas notificaciones fallaron. Revisar configuración de Firebase y tokens FCM."
+            )
 
         return Response(
             {
