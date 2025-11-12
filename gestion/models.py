@@ -153,6 +153,7 @@ class Usuario(models.Model):
     email = models.CharField(max_length=120, unique=True)
     password_hash = models.TextField()
     rol = models.ForeignKey(Rol, on_delete=models.CASCADE)
+    fcm_token = models.CharField(max_length=512, blank=True, null=True)
 
     class Meta:
         managed = True

@@ -15,6 +15,7 @@ def build_user_payload(usuario: Usuario):
         "email": usuario.email,
         "role": usuario.rol.nombre.lower(),
         "permissions": permisos if isinstance(permisos, list) else [],
+        "fcmToken": usuario.fcm_token or "",
     }
 
 
@@ -120,4 +121,43 @@ class BootstrapView(APIView):
         if ensure_user("cliente@demo.com", "Cliente Demo", "cliente", "cliente123"):
             created.append("cliente@demo.com")
         return Response({"created": created}, status=status.HTTP_200_OK)
+
+
+class SetFcmTokenView(APIView):
+    """
+    Guarda el token FCM enviado por el cliente móvil.
+    Requiere cabecera Authorization: Token <clave>
+    Body:
+    {
+        "fcm_token": "<token>"
+    }
+    """
+
+    def post(self, request):
+        auth = request.headers.get("Authorization", "")
+        if not auth.startswith("Token "):
+            return Response({"detail": "no autorizado"}, status=status.HTTP_401_UNAUTHORIZED)
+
+        token = auth.split(" ", 1)[1].strip()
+        try:
+            tok = ApiToken.objects.select_related("usuario").get(key=token)
+        except ApiToken.DoesNotExist:
+            return Response({"detail": "no autorizado"}, status=status.HTTP_401_UNAUTHORIZED)
+
+        data = request.data or {}
+        fcm_token = data.get("fcm_token") or data.get("token")
+
+        if not fcm_token:
+            return Response({"detail": "fcm_token requerido"}, status=status.HTTP_400_BAD_REQUEST)
+
+        tok.usuario.fcm_token = fcm_token
+        tok.usuario.save(update_fields=["fcm_token"])
+
+        return Response(
+            {
+                "ok": True,
+                "fcm_token": fcm_token,
+            },
+            status=status.HTTP_200_OK,
+        )
 

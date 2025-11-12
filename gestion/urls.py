@@ -25,7 +25,14 @@ from gestion.vistas.reportes import (
     ExportResumenExcel,
     PronosticoVentas,
 )
-from gestion.vistas.auth import LoginView, RegisterView, LogoutView, MeView, BootstrapView
+from gestion.vistas.auth import (
+    LoginView,
+    RegisterView,
+    LogoutView,
+    MeView,
+    BootstrapView,
+    SetFcmTokenView,
+)
 from gestion.vistas.upload import UploadImageView
 
 router = DefaultRouter()
@@ -62,6 +69,7 @@ urlpatterns = [
     path('auth/register/', RegisterView.as_view(), name='auth-register'),
     path('auth/logout/', LogoutView.as_view(), name='auth-logout'),
     path('auth/me/', MeView.as_view(), name='auth-me'),
+    path('auth/set-fcm-token/', SetFcmTokenView.as_view(), name='auth-set-fcm-token'),
     path('auth/bootstrap/', BootstrapView.as_view(), name='auth-bootstrap'),
     # Uploads (solo dev)
     path('upload/image/', UploadImageView.as_view(), name='upload-image'),

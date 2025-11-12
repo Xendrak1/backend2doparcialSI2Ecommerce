@@ -4,8 +4,9 @@ from rest_framework.response import Response
 from django.utils import timezone
 from django.db import transaction
 import logging
-from gestion.models import Venta, VentaDetalle, Cliente, Sucursal, Producto, ProductoVariante, Stock
+from gestion.models import Venta, VentaDetalle, Cliente, Sucursal, Producto, ProductoVariante, Stock, Usuario
 from gestion.serializadores.venta import VentaSerializer
+from gestion.services.push_notifications import send_push_to_usuario
 
 logger = logging.getLogger(__name__)
 
@@ -292,4 +293,26 @@ class ConfirmarPagoVenta(APIView):
         venta.estado_pago = "pagado"
         venta.estado = "completado"
         venta.save(update_fields=["estado_pago", "estado"])
+
+        # Intentar notificar al cliente si existe un usuario con ese email
+        cliente_email = venta.cliente.email if venta.cliente else None
+        if cliente_email:
+            usuario = Usuario.objects.filter(email=cliente_email).first()
+            if usuario:
+                ok, detail = send_push_to_usuario(
+                    usuario,
+                    title="Pago confirmado ✅",
+                    body=f"Tu pedido #{venta.id} fue confirmado. ¡Gracias por tu compra!",
+                    data={
+                        "venta_id": str(venta.id),
+                        "tipo": "confirmacion_pago",
+                    },
+                )
+                if not ok:
+                    logger.warning("No se pudo enviar push a %s: %s", cliente_email, detail)
+            else:
+                logger.info("No se encontró usuario asociado al email %s para notificar", cliente_email)
+        else:
+            logger.info("La venta %s no tiene email de cliente para notificar", venta.id)
+
         return Response({"ok": True}, status=status.HTTP_200_OK)
