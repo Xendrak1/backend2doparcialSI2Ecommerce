@@ -8,5 +8,6 @@ python manage.py migrate --noinput
 python manage.py collectstatic --noinput || true
 
 # Iniciar Gunicorn
-gunicorn sistema_boutique.wsgi --bind 0.0.0.0:8000 --workers 2 --timeout 120
+# Azure usa la variable PORT automáticamente
+gunicorn sistema_boutique.wsgi --bind 0.0.0.0:${PORT:-8000} --workers 2 --timeout 120
 

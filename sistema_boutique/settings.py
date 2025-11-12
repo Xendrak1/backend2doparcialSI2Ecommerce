@@ -38,10 +38,14 @@ ALLOWED_HOSTS_STR = os.environ.get('ALLOWED_HOSTS', '')
 if ALLOWED_HOSTS_STR:
     ALLOWED_HOSTS = [host.strip() for host in ALLOWED_HOSTS_STR.split(',') if host.strip()]
 else:
-    # Si no hay variable de entorno configurada, permitir todos los hosts
-    # IMPORTANTE: En producción, configura ALLOWED_HOSTS en Azure Portal
-    # Ejemplo: boutiquebackend-cjfsbjeaehghcefc.brazilsouth-01.azurewebsites.net,*.azurewebsites.net
-    ALLOWED_HOSTS = ['*']
+    # Si no hay variable de entorno configurada, usar fallback para Azure
+    # Incluye el host específico y permite todos los subdominios de azurewebsites.net
+    ALLOWED_HOSTS = [
+        'boutiquebackend-cjfsbjeaehghcefc.brazilsouth-01.azurewebsites.net',
+        '.azurewebsites.net',  # Permite todos los subdominios de Azure
+        'localhost',
+        '127.0.0.1',
+    ]
 
 
 # Application definition
