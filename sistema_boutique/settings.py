@@ -33,7 +33,15 @@ SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-ijr4ux*!)x$xfj$mi16ay
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get('DEBUG', 'True') == 'True'
 
-ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '').split(',') if os.environ.get('ALLOWED_HOSTS') else []
+# ALLOWED_HOSTS: Permite hosts desde variable de entorno o usa valor por defecto
+ALLOWED_HOSTS_STR = os.environ.get('ALLOWED_HOSTS', '')
+if ALLOWED_HOSTS_STR:
+    ALLOWED_HOSTS = [host.strip() for host in ALLOWED_HOSTS_STR.split(',') if host.strip()]
+else:
+    # Si no hay variable de entorno configurada, permitir todos los hosts
+    # IMPORTANTE: En producción, configura ALLOWED_HOSTS en Azure Portal
+    # Ejemplo: boutiquebackend-cjfsbjeaehghcefc.brazilsouth-01.azurewebsites.net,*.azurewebsites.net
+    ALLOWED_HOSTS = ['*']
 
 
 # Application definition
